@@ -8,7 +8,7 @@ from telegram.ext import (
     ContextTypes,
 )
 
-# Loglar
+# Log sozlamalari
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     level=logging.INFO,
@@ -16,37 +16,40 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-# FadeHost sozlamasidan olinadi
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN") or os.getenv("BOT_TOKEN")
+# Bot tokenini hosting sozlamalaridan olish
+TOKEN = (
+    os.getenv("BOT_TOKEN")
+    or os.getenv("TELEGRAM_BOT_TOKEN")
+)
 
 
 async def start(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-):
-    text = (
+) -> None:
+    message = (
         "🎵 Assalomu alaykum!\n"
         "Men Music Uz Botman.\n\n"
-        "🎧 Qo‘shiq qidirish: /play qo‘shiq nomi\n"
-        "📁 Audio qidirish: /audio qo‘shiq nomi\n"
+        "🎶 Qo‘shiq qidirish: /play qo‘shiq nomi\n"
+        "🎧 Audio qidirish: /audio qo‘shiq nomi\n"
         "⏸ Pauza: /pause\n"
         "▶️ Davom ettirish: /resume\n"
         "⏭ Keyingi qo‘shiq: /skip\n"
         "📋 Navbat: /queue\n\n"
-        "Hozircha musiqa qidirish va ijro etish "
-        "funksiyalari ulanmagan."
+        "Bot ishga tushdi! Musiqa funksiyalari "
+        "hali ulanmagan."
     )
 
-    await update.effective_message.reply_text(text)
+    await update.effective_message.reply_text(message)
 
 
 async def play(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-):
+) -> None:
     if not context.args:
         await update.effective_message.reply_text(
-            "🎵 Foydalanish: /play qo‘shiq nomi"
+            "🎵 Misol: /play Munisa Rizayeva"
         )
         return
 
@@ -54,17 +57,17 @@ async def play(
 
     await update.effective_message.reply_text(
         f"🔎 Qidiruv: {query}\n\n"
-        "Musiqa qidirish tizimi hali ulanmagan."
+        "Musiqa qidirish funksiyasi hali ulanmagan."
     )
 
 
 async def audio(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-):
+) -> None:
     if not context.args:
         await update.effective_message.reply_text(
-            "🎧 Foydalanish: /audio qo‘shiq nomi"
+            "🎧 Misol: /audio qo‘shiq nomi"
         )
         return
 
@@ -72,14 +75,14 @@ async def audio(
 
     await update.effective_message.reply_text(
         f"🔎 Audio qidiruvi: {query}\n\n"
-        "Audio qidirish tizimi hali ulanmagan."
+        "Audio qidirish funksiyasi hali ulanmagan."
     )
 
 
 async def pause(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-):
+) -> None:
     await update.effective_message.reply_text(
         "⏸ Pauza funksiyasi hali ulanmagan."
     )
@@ -88,7 +91,7 @@ async def pause(
 async def resume(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-):
+) -> None:
     await update.effective_message.reply_text(
         "▶️ Davom ettirish funksiyasi hali ulanmagan."
     )
@@ -97,7 +100,7 @@ async def resume(
 async def skip(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-):
+) -> None:
     await update.effective_message.reply_text(
         "⏭ Keyingi qo‘shiq funksiyasi hali ulanmagan."
     )
@@ -106,11 +109,66 @@ async def skip(
 async def queue(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
-):
+) -> None:
     await update.effective_message.reply_text(
         "📋 Hozircha navbat bo‘sh."
     )
 
 
 async def error_handler(
-    update:
+    update: object,
+    context: ContextTypes.DEFAULT_TYPE,
+) -> None:
+    logger.error(
+        "Telegram botda xatolik yuz berdi",
+        exc_info=context.error,
+    )
+
+
+def main() -> None:
+    if not TOKEN:
+        raise RuntimeError(
+            "Bot tokeni topilmadi! "
+            "Hosting sozlamalarida BOT_TOKEN "
+            "nomli environment variable yarating."
+        )
+
+    application = (
+        Application.builder()
+        .token(TOKEN)
+        .build()
+    )
+
+    application.add_handler(
+        CommandHandler("start", start)
+    )
+    application.add_handler(
+        CommandHandler("play", play)
+    )
+    application.add_handler(
+        CommandHandler("audio", audio)
+    )
+    application.add_handler(
+        CommandHandler("pause", pause)
+    )
+    application.add_handler(
+        CommandHandler("resume", resume)
+    )
+    application.add_handler(
+        CommandHandler("skip", skip)
+    )
+    application.add_handler(
+        CommandHandler("queue", queue)
+    )
+
+    application.add_error_handler(error_handler)
+
+    logger.info("Music Uz Bot ishga tushmoqda...")
+
+    application.run_polling(
+        allowed_updates=Update.ALL_TYPES
+    )
+
+
+if __name__ == "__main__":
+    main()
